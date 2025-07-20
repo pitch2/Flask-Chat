@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Vos conversations</title>
+</head>
+<body>
+    <ul id="conv">
+    {% for conv in list_conversations %}
+        <li><a href="http://localhost:1000/get_data/{{conv}}/{{key}}">{{ conv }}</a></li>
+    {% endfor %}
+    </ul>
+</body>
+</html>

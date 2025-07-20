@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, flash, jsonify
+from flask import Flask, render_template, request, flash, jsonify, render_template_string
 import os, json, datetime, csv, re
 
 app = Flask(__name__)
@@ -7,7 +7,7 @@ app = Flask(__name__)
 def index():
     return jsonify("Salut")
 
-@app.route("/receive_data", methods=["POST"])
+@app.route("/receive_data/", methods=["POST"])
 def receive_data():
     data = request.get_json()
 
@@ -62,13 +62,8 @@ def traitement_data_receive_json(data: list): #Stockage de la conversation
             json.dump(data, f, indent=4, ensure_ascii=False)
 
 
-@app.route("/get_data/", methods=["GET"])
-def get_data():
-    data = request.get_json()
-
-    conv = data["conv"]
-    key = data["key"]
-
+@app.route("/get_data/<conv>/<key>", methods=["GET"])
+def get_data(conv, key):
     with open(r'.\stockage\Access.json','r') as f:
         access = json.load(f)
         access = access[0]
@@ -77,7 +72,8 @@ def get_data():
         if re.fullmatch(r'^\d+_\d+$', conv):
             c1= str(conv).split("_")[0]
             c2 = str(conv).split("_")[1]
-            if access[key] == f"{c1}_{c2}":
+            liste_conv = access[key].split(",")
+            if f"{c1}_{c2}" in liste_conv:
                 filename = fr".\stockage\{c1}_{c2}_CONV.json"
                 if os.path.exists(filename):
                     with open(filename,'r') as r:
@@ -89,12 +85,29 @@ def get_data():
                     return jsonify({"status": "This conversation not exist"})
             else:
                 logs_sending_CSV(key, f"Tentative on {conv}, not access", datetime.datetime.now().strftime("%X %x"))
-                return jsonify({"status": "You don't have access for this conversation, attempt is report"})
+                return jsonify({"status": f"You don't have access for this conversation, attempt is report AAA{{liste_conv}}"})
         else:
             return jsonify({"status": "error"})
     else:
         logs_sending_CSV(key, "This key note exist", datetime.datetime.now().strftime("%X %x"))
         return jsonify({"status": "You key's isn't valable"})
+
+
+@app.route("/conv_key/<string:key>")
+def key_to_conv(key):
+    with open(r'.\stockage\Access.json','r') as f:
+        access = json.load(f)
+        access = access[0]
+
+    if key in access:
+        return jsonify({"Conv": access[key] })
+    else:
+        return jsonify({"Status":"This key no access"})
+
+
+@app.route("/send_chat")
+def send_chat():
+    pass
 
 
 def logs_CSV(data: list):
@@ -116,3 +129,5 @@ def logs_sending_CSV(key, message, date):
         (csv.writer(f)).writerow(data)
 
 
+if __name__ == '__main__':
+    app.run(port=1000)
